@@ -17,6 +17,7 @@ find x ((y,z):zs)
   | otherwise = find x zs
 
 
+
 merge :: Ord a => [a] -> [a] -> [a]
 merge xs [] = xs
 merge [] ys = ys
@@ -88,10 +89,12 @@ t3 = At "a" :-> At "c" :-> At "c"
 ------------------------- Assignment 1
 
 occurs :: Atom -> Type -> Bool
-occurs = undefined
+occurs x (At y) = x == y
+occurs x (y :-> ys) = occurs x ys || occurs x y
 
 findAtoms :: Type -> [Atom]
-findAtoms = undefined
+findAtoms (At x) = [x]
+findAtoms (x :-> xs) = merge (findAtoms x)  (findAtoms xs)
 
 
 ------------------------- Type substitution
@@ -111,10 +114,14 @@ s3 = ("c", At "a" :-> At "a")
 ------------------------- Assignment 2
 
 sub :: Sub -> Type -> Type
-sub = undefined
+sub x (y :-> ys) = sub x y :-> sub x ys
+sub x (At y) 
+  | fst x == y = snd x
+  | otherwise = At y
 
 subs :: [Sub] -> Type -> Type
-subs = undefined
+subs [x] y = sub x y
+subs x y = sub (head x) (subs (tail x)  y)
 
 
 ------------------------- Unification
