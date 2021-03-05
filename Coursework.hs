@@ -17,7 +17,6 @@ find x ((y,z):zs)
   | otherwise = find x zs
 
 
-
 merge :: Ord a => [a] -> [a] -> [a]
 merge xs [] = xs
 merge [] ys = ys
@@ -126,6 +125,7 @@ subs x y = sub (head x) (subs (tail x)  y)
 
 ------------------------- Unification
 
+-- pair of types where
 type Upair = (Type,Type)
 type State = ([Sub],[Upair])
 
@@ -147,17 +147,28 @@ st1 = ([],[u1,u2])
 
 ------------------------- Assignment 3
 
+-- for each in list, for each pair, substitute
 sub_u :: Sub -> [Upair] -> [Upair]
-sub_u  = undefined
+sub_u _ [] = []
+sub_u x (y:ys) = (sub x (fst y), sub x (snd y)) : (sub_u x ys)
 
-
+-- creating a list of subs from unification pairs
 step :: State -> State
-step = undefined
+step (y,(x :-> xt, xx :-> xxt):xs) = (y, (x,xx):(xt,xxt):xs)
+step (y,(At x, At xx):xs) 
+  | x == xx = (y,xs)
+step (y,(At x, xx):xs) 
+  | occurs x xx = error "Fail"
+  | occurs x xx == False = ((x,xx):y, (sub_u (x,xx) xs))
+step (y,(x, At xx):xs) 
+  | occurs xx x = error "Fail"
+  | occurs xx x == False = ((xx,x):y, (sub_u (xx,x) xs))
 
-
+-- apply step function until run out of unification pairs to build up list of subs
 unify :: [Upair] -> [Sub]
-unify = undefined
-
+unify y = unifies ([], y)
+  where unifies (x, []) = x
+        unifies (x, y) = unifies (step (x,y)) 
 
 ------------------------- Assignment 4
 
