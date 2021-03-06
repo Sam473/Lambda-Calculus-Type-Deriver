@@ -172,14 +172,17 @@ unify y = unifies ([], y)
 
 ------------------------- Assignment 4
 
-type Context   = ()
-type Judgement = ()
+type Context   = [(Var, Type)]
+type Judgement = (Context, Term, Type)
 
-data Derivation
+data Derivation = 
+    Axiom Judgement 
+  | Application Judgement Derivation Derivation
+  | Abstraction Judgement Derivation
 
 n1 = Apply (Lambda "x" (Variable "x")) (Variable "y")
 
-{-
+
 d1 = Application ([("y",At "a")], n1 , At "a") (
        Abstraction ([("y",At "a")],Lambda "x" (Variable "x"),At "a" :-> At "a") (
          Axiom ([("x",At "a"),("y",At "a")],Variable "x",At "a")
@@ -197,25 +200,34 @@ d2 = Application ([("y",At "b")],Apply (Lambda "x" (Apply (Variable "x") (Variab
        Abstraction ([("y",At "b")],Lambda "z" (Variable "z"),At "h") (
          Axiom ([("z",At "i"),("y",At "b")],Variable "z",At "j")
      ) )
--}
 
+
+-- return judgement for each possible derivation
 conclusion :: Derivation -> Judgement
-conclusion = undefined
+conclusion (Axiom x) = x
+conclusion (Application x y z) = x
+conclusion (Abstraction x y) = x
 
 
+-- change type with substitution
 subs_ctx :: [Sub] -> Context -> Context
-subs_ctx = undefined
+subs_ctx _ [] = []
+subs_ctx x (y:ys) = (fst y, subs x (snd y)) : (subs_ctx x ys)
 
+--substitute type and context
 subs_jdg :: [Sub] -> Judgement -> Judgement
-subs_jdg = undefined
+subs_jdg s (x, y, z) = (subs_ctx s x, y,subs s z)
 
+--do the recursive pattern matching
 subs_der :: [Sub] -> Derivation -> Derivation
-subs_der = undefined
+subs_der s (Axiom x) = Axiom (subs_jdg s x)
+subs_der s (Application x y z) = Application (subs_jdg s x) (subs_der s y) (subs_der s z)
+subs_der s (Abstraction x y) = Abstraction (subs_jdg s x) (subs_der s y)
 
 
 ------------------------- Typesetting derivations
 
-{-
+
 instance Show Derivation where
   show d = unlines (reverse strs)
     where
@@ -257,7 +269,6 @@ instance Show Derivation where
         | length d1 > length d2 = ( l1 , m1+r1+2+l2+m2 , r2 , [ x ++ "  " ++ y | (x,y) <- zip d1 (extend (l2+m2+r2) d2)])
         | otherwise             = ( l1 , m1+r1+2+l2+m2 , r2 , [ x ++ "  " ++ y | (x,y) <- zip (extend (l1+m1+r1) d1) d2])
 
--}
 
 ------------------------- Assignment 5
 
