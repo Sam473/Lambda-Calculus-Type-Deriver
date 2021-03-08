@@ -272,16 +272,61 @@ instance Show Derivation where
 
 ------------------------- Assignment 5
 
+{-- 
+*Take a term
+*Parse through it to put all the bits into a judgement, filling context with free variables
+*Pass that judgement to aux which then turns the judgements into derivations
+
+data Term =
+    Variable Var
+  | Lambda   Var  Term
+  | Apply    Term Term
+  deriving Eq
+
+n1 = Apply (Lambda "x" (Variable "x")) (Variable "y")
+
+type Context   = [(Var, Type)] use a list comprehension list of pair x, e (free x)
+type Judgement = (Context, Term, Type)
+
+data Derivation = 
+    Axiom Judgement 
+  | Application Judgement Derivation Derivation
+  | Abstraction Judgement Derivation
+
+in aux pattern match for each term
+if varibale make axiom, lambda abstraction
+  recurse for 
+
+--}
+
 
 derive0 :: Term -> Derivation
-derive0 = undefined
+derive0 x = aux ([(i,j) | i <- free x, j <- [At ""]],  x, At "")
   where
     aux :: Judgement -> Derivation
-    aux = undefined
+    aux (Variable (extractSnd x)) = Axiom x
+    aux (Lambda (snd x)) =  Abstraction x (derive0 (snd x))
+    aux (Apply (snd x)) = Abstraction x (derive0 (snd x))
+    extractSnd :: (a, b, c) -> b
+    extractSnd (_,b,_) = b
 
+{--
+
+Base off derive 0
+instead of empty atoms, assign each variable a type, free variables in context given a distinct atom
+assign distinct atoms to the right variables
+
+construct context same way
+
+get rest of the atoms for the aux function as well as judgement
+
+for the abstraction, when you call aux again add abstracted value with new atom into context
+
+
+--}
 
 derive1 :: Term -> Derivation
-derive1 = undefined
+derive1 = aux ([(i,j) | i <- free x, j <- atoms],  x, atoms) -- maybe should be take atom from atoms in second half
   where
     aux :: [Atom] -> Judgement -> Derivation
     aux = undefined
