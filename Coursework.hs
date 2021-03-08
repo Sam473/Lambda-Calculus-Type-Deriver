@@ -304,12 +304,9 @@ derive0 :: Term -> Derivation
 derive0 x = aux ([(i,j) | i <- free x, j <- [At ""]],  x, At "")
   where
     aux :: Judgement -> Derivation
-    aux (Variable (extractSnd x)) = Axiom x
-    aux (Lambda (snd x)) =  Abstraction x (derive0 (snd x))
-    aux (Apply (snd x)) = Abstraction x (derive0 (snd x))
-    extractSnd :: (a, b, c) -> b
-    extractSnd (_,b,_) = b
-
+    aux (x,Variable y,z) = Axiom (x,Variable y,z)
+    aux (x, Lambda y ys,z) = Abstraction (x,Lambda y ys,z) (aux ((y, At ""):x, ys, z))
+    aux (x,Apply y ys,z) = Application (x,Apply y ys,z) (aux (x, y, z)) (aux (x, ys, z))
 {--
 
 Base off derive 0
@@ -322,11 +319,11 @@ get rest of the atoms for the aux function as well as judgement
 
 for the abstraction, when you call aux again add abstracted value with new atom into context
 
-
+ aux ([(i,j) | i <- free x, j <- atoms],  x, atoms)
 --}
 
 derive1 :: Term -> Derivation
-derive1 = aux ([(i,j) | i <- free x, j <- atoms],  x, atoms) -- maybe should be take atom from atoms in second half
+derive1 x = aux atoms ([(i,j) | i <- free x, j <- atoms],  x, head atoms)-- maybe should be take atom from atoms in second half
   where
     aux :: [Atom] -> Judgement -> Derivation
     aux = undefined
