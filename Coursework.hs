@@ -343,6 +343,12 @@ data Derivation =
 
 n1 = Apply (Lambda "x" (Variable "x")) (Variable "y")
 
+data Term =
+    Variable Var
+  | Lambda   Var  Term
+  | Apply    Term Term
+  deriving Eq
+
 data Type = At Atom | Type :-> Type
   deriving Eq
 
@@ -351,9 +357,12 @@ type Upair = (Type,Type)
 Takes the unification pairs from derivation.
 
 *Take derivation
-*Extract unification pairs using incomplete rulse and unification pairs 
+*Extract unification pairs using incomplete rules and unification pairs 
 when pass variable get type of variable and type of term
 Deconstruct and pattern match to get the unification pairs
+
+FOR APPLICATION:
+ - GET THE BETA FROM 
 
 second part 
 type of abstracted variable :-> type of M
@@ -362,11 +371,32 @@ look in judgements for types of terms
 
 conclusion function to get judgement of m and n
 
+Think the problem is with head in axiom and abstraction
+
+find :: (Show a,Eq a) => a -> [(a,b)] -> b
+find x [] = error ("find: " ++ show x ++ " not found")
+find x ((y,z):zs)
+  | x == y    = z
+  | otherwise = find x zs
+
+find variable context
+
 --}
 
 upairs :: Derivation -> [Upair]
-upairs = undefined
-
+upairs (Axiom x) = [(third x, find (snd  x) (myfst x))]
+  where third (_, _, z) = z
+        myfst (x, _, _) = x
+        mysnd (_, y, _) = y
+upairs (Abstraction x y) = ((third x),  (snd (head (myfst (conclusion y))) :-> (third (conclusion y)))) : upairs y
+  where third (_, _, z) = z
+        myfst (x, _, _) = x
+upairs (Application x y z) = (third (conclusion y), (third (conclusion z)) :-> (third x)) : (umerge (upairs y) (upairs z))
+  where third (_, _, z) = z
+        umerge :: [a] -> [a] -> [a]
+        umerge xs     []     = xs
+        umerge []     ys     = ys
+        umerge (x:xs) (y:ys) = x : y : umerge xs ys
 
 {--
 data Term =
