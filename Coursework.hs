@@ -7,7 +7,6 @@
 --                                        --
 --------------------------------------------
 
-
 ------------------------- Auxiliary functions
 
 find :: (Show a,Eq a) => a -> [(a,b)] -> b
@@ -299,9 +298,8 @@ if varibale make axiom, lambda abstraction
 
 --}
 
-
 derive0 :: Term -> Derivation
-derive0 x = aux ([(i,j) | i <- free x, j <- [At ""]],  x, At "")
+derive0 x = aux (zip (free x) ([At ""]),  x, At "")
   where
     aux :: Judgement -> Derivation
     aux (x,Variable y,z) = Axiom (x,Variable y,z)
@@ -320,18 +318,22 @@ get rest of the atoms for the aux function as well as judgement
 for the abstraction, when you call aux again add abstracted value with new atom into context
 
  aux ([(i,j) | i <- free x, j <- atoms],  x, atoms)
+
+ aux atoms ([(i, At j) | i <- free x, j <- tail atoms],  x, At (head atoms))
 --}
 
-derive1 :: Term -> Derivation
-derive1 x = aux atoms ([(i,j) | i <- free x, j <- atoms],  x, head atoms)-- maybe should be take atom from atoms in second half
+derive1 :: Term -> Derivation -- fix the tail tail atoms thing to work for all cases
+derive1 x = aux (tail(tail atoms)) ((zip (free x) (map At (tail atoms))),  x, At (head atoms))
   where
-    aux :: [Atom] -> Judgement -> Derivation
-    aux = undefined
-
+    aux :: [Atom] -> Judgement -> Derivation 
+    aux a (x, Variable y,z) = Axiom (x,Variable y,z)
+    aux a (x, Lambda y ys,z) = Abstraction (x,Lambda y ys,z) (aux (tail a) (((y, At (head a)) :x), ys, At (head (tail a))))
+    aux a (x, Apply y ys,z) = Application (x,Apply y ys,z) (aux (tail (evens a)) (x, y, At (head (evens a)))) (aux (tail (odds a)) (x, ys, At (head (odds a)))) -- Split into distinct atom stream for each
+    evens xs = [x | (i, x) <- zip [0..] xs, even i]
+    odds xs = [x | (i, x) <- zip [0..] xs, odd i]
 
 upairs :: Derivation -> [Upair]
 upairs = undefined
-
 
 derive :: Term -> Derivation
 derive = undefined
