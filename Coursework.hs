@@ -323,7 +323,7 @@ for the abstraction, when you call aux again add abstracted value with new atom 
 --}
 
 derive1 :: Term -> Derivation -- fix the tail tail atoms thing to work for all cases
-derive1 x = aux (tail(tail atoms)) ((zip (free x) (map At (tail atoms))),  x, At (head atoms))
+derive1 x = aux (drop (length (free x)+1) atoms) ((zip (free x) (map At (tail atoms))),  x, At (head atoms))
   where
     aux :: [Atom] -> Judgement -> Derivation 
     aux a (x, Variable y,z) = Axiom (x,Variable y,z)
@@ -332,8 +332,69 @@ derive1 x = aux (tail(tail atoms)) ((zip (free x) (map At (tail atoms))),  x, At
     evens xs = [x | (i, x) <- zip [0..] xs, even i]
     odds xs = [x | (i, x) <- zip [0..] xs, odd i]
 
+{--
+type Context   = [(Var, Type)] use a list comprehension list of pair x, e (free x)
+type Judgement = (Context, Term, Type)
+
+data Derivation = 
+    Axiom Judgement 
+  | Application Judgement Derivation Derivation
+  | Abstraction Judgement Derivation
+
+n1 = Apply (Lambda "x" (Variable "x")) (Variable "y")
+
+data Type = At Atom | Type :-> Type
+  deriving Eq
+
+type Upair = (Type,Type)
+
+Takes the unification pairs from derivation.
+
+*Take derivation
+*Extract unification pairs using incomplete rulse and unification pairs 
+when pass variable get type of variable and type of term
+Deconstruct and pattern match to get the unification pairs
+
+second part 
+type of abstracted variable :-> type of M
+
+look in judgements for types of terms
+
+conclusion function to get judgement of m and n
+
+--}
+
 upairs :: Derivation -> [Upair]
 upairs = undefined
+
+
+{--
+data Term =
+    Variable Var
+  | Lambda   Var  Term
+  | Apply    Term Term
+  deriving Eq
+
+n1 = Apply (Lambda "x" (Variable "x")) (Variable "y")
+
+type Context   = [(Var, Type)] use a list comprehension list of pair x, e (free x)
+type Judgement = (Context, Term, Type)
+
+data Derivation = 
+    Axiom Judgement 
+  | Application Judgement Derivation Derivation
+  | Abstraction Judgement Derivation
+
+
+*Take term
+*Use derive1 to produce a type derivation for it 
+*Extract unification pairs from the derivation
+*unify the pairs with unify function to get substitutions
+*use subs der to apply the substitutions to derivation
+
+AFTER:
+*Check if result is valid or not, if not throw error
+--}
 
 derive :: Term -> Derivation
 derive = undefined
