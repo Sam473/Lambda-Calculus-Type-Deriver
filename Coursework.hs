@@ -327,7 +327,7 @@ derive1 x = aux (drop (length (free x)+1) atoms) ((zip (free x) (map At (tail at
   where
     aux :: [Atom] -> Judgement -> Derivation 
     aux a (x, Variable y,z) = Axiom (x,Variable y,z)
-    aux a (x, Lambda y ys,z) = Abstraction (x,Lambda y ys,z) (aux (tail a) (((y, At (head a)) :x), ys, At (head (tail a))))
+    aux a (x, Lambda y ys,z) = Abstraction (x,Lambda y ys,z) (aux (tail (tail a)) (((y, At (head a)) :x), ys, At (head (tail a))))
     aux a (x, Apply y ys,z) = Application (x,Apply y ys,z) (aux (tail (evens a)) (x, y, At (head (evens a)))) (aux (tail (odds a)) (x, ys, At (head (odds a)))) -- Split into distinct atom stream for each
     evens xs = [x | (i, x) <- zip [0..] xs, even i]
     odds xs = [x | (i, x) <- zip [0..] xs, odd i]
@@ -381,21 +381,59 @@ find x ((y,z):zs)
 
 find variable context
 
+upairs (Application x y z) = (third (conclusion y), (third (conclusion z)) :-> (third x)) : (umerge (upairs y) (upairs z))
+
 --}
 
+n2 :: Term
+n2 = Variable "x" --Just a variable
+
+n3 :: Term
+n3 = Variable "y"
+
+n4 :: Term
+n4 = Variable "z"
+
+n5 :: Term
+n5 = Lambda "x" (Variable "y") -- Free Abstraction \x.y
+
+n6 :: Term
+n6 = Lambda "x" n2 -- Bounded Abstraction \x.x
+
+n7 :: Term 
+n7 = Apply n2 n2 -- Aplication of identical variables might not be typable xx
+
+n8 :: Term
+n8 = Apply n2 n3 -- Application of different variables xy
+
+n9 :: Term
+n9 = Apply n5 n2 -- Application of lambda and variables (\x.y)x
+
+n10 :: Term
+n10 = Apply n5 n3 -- (\x.y)y
+
+n11 :: Term 
+n11 = Apply n6 n2 -- (\x.x)x
+
+n12 :: Term
+n12 = Lambda "x" (Lambda "y" (Lambda "z" (Apply (Apply n2 n4) (Apply n3 n4)))) -- \x. \y. \z. x z (y z)
+
+n13 :: Term 
+n13 = Lambda "x" (Lambda "y" (Lambda "z" (Apply (Lambda "u" (Apply (Apply n2 n4) (Variable "u"))) (Apply n3 n4)))) -- \xyz. (\u. x z u) (y z)
+
+n14 :: Term
+n14 = Lambda "f" (Lambda "x" (Apply (Variable "f") (Apply (Variable "f") n2))) -- \fx. f (f x)
+
 upairs :: Derivation -> [Upair]
-upairs (Axiom x) = [(third x, find (snd  x) (myfst x))]
-  where third (_, _, z) = z
-        myfst (x, _, _) = x
-        mysnd (_, y, _) = y
-upairs (Abstraction x y) = ((third x),  (snd (head (myfst (conclusion y))) :-> (third (conclusion y)))) : upairs y
+upairs (Axiom (x, Variable y, z)) = [(z, find y x)]
+upairs (Abstraction (x, Lambda y ys, z) s) = (z,  find y (myfst (conclusion s)) :-> (third (conclusion s))) : upairs s
   where third (_, _, z) = z
         myfst (x, _, _) = x
 upairs (Application x y z) = (third (conclusion y), (third (conclusion z)) :-> (third x)) : (umerge (upairs y) (upairs z))
   where third (_, _, z) = z
         umerge :: [a] -> [a] -> [a]
-        umerge xs     []     = xs
-        umerge []     ys     = ys
+        umerge xs [] = xs
+        umerge [] ys = ys
         umerge (x:xs) (y:ys) = x : y : umerge xs ys
 
 {--
@@ -427,5 +465,6 @@ AFTER:
 --}
 
 derive :: Term -> Derivation
-derive = undefined
+derive x = subs_der (unify (upairs (der))) (der)
+  where der = derive1 x
 
