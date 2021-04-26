@@ -296,15 +296,23 @@ in aux pattern match for each term
 if varibale make axiom, lambda abstraction
   recurse for 
 
+
+if y is in context then remove y and add y with fresh variable
+
 --}
+removeabs _ [] = []
+removeabs y (x:xs)
+    | (fst x) == y = removeabs y xs
+    | otherwise = x : removeabs y xs
 
 derive0 :: Term -> Derivation
 derive0 x = aux (zip (free x) ([At ""]),  x, At "")
   where
     aux :: Judgement -> Derivation
     aux (x,Variable y,z) = Axiom (x,Variable y,z)
-    aux (x, Lambda y ys,z) = Abstraction (x,Lambda y ys,z) (aux ((y, At ""):x, ys, z))
+    aux (x, Lambda y ys,z) = Abstraction (x,Lambda y ys,z) (aux ((y, At "") : (removeabs y x), ys, z))
     aux (x,Apply y ys,z) = Application (x,Apply y ys,z) (aux (x, y, z)) (aux (x, ys, z))
+      
 {--
 
 Base off derive 0
@@ -327,7 +335,7 @@ derive1 x = aux (drop (length (free x)+1) atoms) ((zip (free x) (map At (tail at
   where
     aux :: [Atom] -> Judgement -> Derivation 
     aux a (x, Variable y,z) = Axiom (x,Variable y,z)
-    aux a (x, Lambda y ys,z) = Abstraction (x,Lambda y ys,z) (aux (tail (tail a)) (((y, At (head a)) :x), ys, At (head (tail a))))
+    aux a (x, Lambda y ys,z) = Abstraction (x,Lambda y ys,z) (aux (tail (tail a)) (((y, At (head a)) : (removeabs y x)), ys, At (head (tail a))))
     aux a (x, Apply y ys,z) = Application (x,Apply y ys,z) (aux (tail (evens a)) (x, y, At (head (evens a)))) (aux (tail (odds a)) (x, ys, At (head (odds a)))) -- Split into distinct atom stream for each
     evens xs = [x | (i, x) <- zip [0..] xs, even i]
     odds xs = [x | (i, x) <- zip [0..] xs, odd i]
